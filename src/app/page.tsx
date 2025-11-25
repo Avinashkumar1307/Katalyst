@@ -7,6 +7,7 @@ import LoadingState from "@/components/LoadingState";
 import ErrorState from "@/components/ErrorState";
 import LoginPage from "@/components/LoginPage";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchCalendarData } from "@/lib/calendar-service";
 
 export default function Home() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -25,13 +26,8 @@ export default function Home() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("/api/meetings");
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch meetings");
-      }
-
-      const data = await response.json();
+      // Call the client-side service instead of the API route
+      const data = await fetchCalendarData();
       setCalendarData(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

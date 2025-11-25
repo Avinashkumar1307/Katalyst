@@ -10,11 +10,11 @@ export class MCPCalendarClient {
 
   async connect() {
     try {
-      this.apiKey = process.env.COMPOSIO_API_KEY || "";
-      this.mcpEndpoint = process.env.MCP_ENDPOINT || "";
+      this.apiKey = process.env.NEXT_PUBLIC_COMPOSIO_API_KEY || "ak_AKUWLxHzfTbXODjNltuN";
+      this.mcpEndpoint = process.env.NEXT_PUBLIC_MCP_ENDPOINT || "";
 
-      if (!this.apiKey) throw new Error("Missing COMPOSIO_API_KEY");
-      if (!this.mcpEndpoint) throw new Error("Missing MCP_ENDPOINT");
+      if (!this.apiKey) throw new Error("Missing NEXT_PUBLIC_COMPOSIO_API_KEY");
+      if (!this.mcpEndpoint) throw new Error("Missing NEXT_PUBLIC_MCP_ENDPOINT");
 
       this.connected = true;
       console.log("MCP client connected successfully");
@@ -26,21 +26,24 @@ export class MCPCalendarClient {
     }
   }
 
-  async callTool(toolName: string, args: Record<string, any> = {}) {
+  async execute(prompt: string) {
     if (!this.connected) throw new Error("MCP client not connected");
 
     try {
-      console.log(`[MCP Client] Calling tool: ${toolName}`);
-      console.log(`[MCP Client] Parameters:`, JSON.stringify(args, null, 2));
+      console.log(`[MCP Client] Executing prompt: "${prompt}"`);
 
-      // MCP uses JSON-RPC 2.0 protocol
+      // Use the 'prompt' method for a high-level, compliant interaction
       const rpcRequest = {
         jsonrpc: "2.0",
         id: this.requestId++,
-        method: "tools/call",
+        method: "prompt",
         params: {
-          name: toolName,
-          arguments: args,
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
         },
       };
 
@@ -61,47 +64,34 @@ export class MCPCalendarClient {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`[MCP Client] Error response:`, errorText);
-
-        if (response.status === 404) {
-          throw new Error(
-            `MCP tool "${toolName}" not found. ` +
-            `Make sure Google Calendar is connected in your MCP server configuration.`
-          );
-        } else if (response.status === 401 || response.status === 403) {
+        if (response.status === 401 || response.status === 403) {
           throw new Error(
             `Authentication failed. Please check your COMPOSIO_API_KEY in .env file.`
           );
         }
-
         throw new Error(`MCP server error: ${response.status} - ${errorText}`);
       }
 
       const contentType = response.headers.get("content-type");
       let rpcResponse;
 
-      // Handle Server-Sent Events (SSE) response
       if (contentType?.includes("text/event-stream")) {
         const text = await response.text();
         console.log(`[MCP Client] Raw SSE response (first 500 chars):`, text.substring(0, 500));
-
-        // Parse SSE format: "event: message\ndata: {...}\n\n"
         const lines = text.split("\n");
         const dataLine = lines.find((line) => line.startsWith("data: "));
-
         if (dataLine) {
-          const jsonData = dataLine.substring(6); // Remove "data: " prefix
+          const jsonData = dataLine.substring(6);
           rpcResponse = JSON.parse(jsonData);
           console.log(`[MCP Client] Parsed SSE response:`, JSON.stringify(rpcResponse, null, 2));
         } else {
           throw new Error("No data in SSE response");
         }
       } else {
-        // Regular JSON response
         rpcResponse = await response.json();
         console.log(`[MCP Client] Raw JSON response:`, JSON.stringify(rpcResponse, null, 2));
       }
 
-      // Handle JSON-RPC error
       if (rpcResponse.error) {
         console.error(`[MCP Client] RPC Error:`, rpcResponse.error);
         throw new Error(
@@ -109,19 +99,15 @@ export class MCPCalendarClient {
         );
       }
 
-      // Extract result from JSON-RPC response
       const result = rpcResponse.result;
-
       if (!result) {
         throw new Error("MCP response missing result");
       }
 
-      console.log(`[MCP Client] Success! Received ${result.content?.length || 0} content items`);
-
-      // MCP returns results in content array format
+      console.log(`[MCP Client] Success! Received result from prompt.`);
       return result;
     } catch (error) {
-      console.error("[MCP Client] Tool execution error:", error);
+      console.error("[MCP Client] Prompt execution error:", error);
       throw error;
     }
   }
