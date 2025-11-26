@@ -6,7 +6,7 @@ A lightweight web application that connects to Google Calendar using MCP (Model 
 
 - **Google Calendar Integration**: Fetch meetings using Composio MCP (not vanilla Calendar API)
 - **Meeting Display**: View 5 upcoming and 5 past meetings with detailed information
-- **AI Summaries**: Automatically generate summaries for past meetings using OpenAI
+- **AI Summaries**: Automatically generate summaries for past meetings using Groq AI (free alternative to OpenAI)
 - **Mock Authentication**: Demo authentication system (production would use Google OAuth)
 - **Responsive UI**: Clean, modern interface built with React and Tailwind CSS
 - **Error Handling**: Comprehensive loading and error states
@@ -17,7 +17,7 @@ A lightweight web application that connects to Google Calendar using MCP (Model 
 - **Styling**: Tailwind CSS
 - **Calendar Integration**: Composio MCP Server
 - **MCP SDK**: @modelcontextprotocol/sdk
-- **AI**: OpenAI GPT-4o-mini for meeting summaries
+- **AI**: Groq (llama-3.1-8b-instant) for meeting summaries
 - **Date Handling**: date-fns
 
 ## Prerequisites
@@ -26,7 +26,7 @@ Before you begin, ensure you have:
 
 - Node.js 18+ installed
 - A Composio account with API access
-- An OpenAI API key (for AI summaries)
+- A Groq API key (for AI summaries - free at https://console.groq.com)
 - Google Calendar connected to your Composio account
 
 ## Setup Instructions
@@ -58,8 +58,8 @@ Edit `.env` and add your credentials:
 # Composio API Key (Get from https://app.composio.dev)
 COMPOSIO_API_KEY=your_composio_api_key_here
 
-# OpenAI API Key (for AI summaries)
-OPENAI_API_KEY=your_openai_api_key_here
+# Groq API Key (for AI summaries - get free key from https://console.groq.com)
+OPENAI_API_KEY=your_groq_api_key_here
 
 # Google Calendar User ID (email address of the calendar to access)
 GOOGLE_CALENDAR_USER_ID=your_email@gmail.com
@@ -120,7 +120,7 @@ The application uses the Model Context Protocol (MCP) to communicate with Compos
 1. **MCP Client** (`src/lib/mcp-client.ts`): Establishes a connection to the Composio MCP server
 2. **API Route** (`src/app/api/meetings/route.ts`): Uses the MCP client to call the `GOOGLECALENDAR_LIST_EVENTS` tool
 3. **Data Processing**: Parses the MCP response and separates meetings into upcoming and past
-4. **AI Enhancement**: Generates summaries for past meetings using OpenAI
+4. **AI Enhancement**: Generates summaries for past meetings using Groq AI
 
 ### Authentication Flow
 
@@ -189,9 +189,9 @@ The current implementation uses mock authentication for demo purposes:
 **Tradeoff**:
 - ✅ Provides value-add feature
 - ✅ Demonstrates AI integration
-- ✅ More cost-effective (only past meetings)
-- ❌ Requires OpenAI API key
-- ❌ Additional latency
+- ✅ Cost-effective (Groq is free with generous limits)
+- ✅ Fast inference with Groq's LPU architecture
+- ❌ Additional latency for API calls
 
 ### 5. No Database Layer
 
@@ -211,7 +211,7 @@ The current implementation uses mock authentication for demo purposes:
 
 1. **Composio Setup**: Assumes user has already connected Google Calendar to Composio
 2. **Calendar Access**: Assumes the provided email has calendar events to display
-3. **Network**: Assumes stable connection to Composio and OpenAI APIs
+3. **Network**: Assumes stable connection to Composio and Groq APIs
 4. **MCP Server**: Assumes `@composio/mcp-server-composio` is available via npx
 5. **Time Zone**: All times displayed in user's local timezone
 6. **Meeting Count**: Limited to 5 upcoming and 5 past meetings for demo purposes
@@ -263,13 +263,14 @@ If meetings don't appear:
 3. Check browser console for API errors
 4. Verify environment variables are loaded
 
-### OpenAI Summary Errors
+### Groq AI Summary Errors
 
 If AI summaries fail:
 
-1. Verify your OpenAI API key
-2. Check API quota/billing
-3. The app will still work without summaries
+1. Verify your Groq API key from https://console.groq.com
+2. Check API rate limits (Groq has generous free tier)
+3. Restart the dev server after changing API keys
+4. The app will still work without summaries
 
 ## License
 
