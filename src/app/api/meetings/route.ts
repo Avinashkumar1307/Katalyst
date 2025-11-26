@@ -5,6 +5,7 @@ import { Meeting, CalendarData } from "@/types";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "",
+  baseURL: "https://api.groq.com/openai/v1",
 });
 
 export async function GET() {
@@ -197,7 +198,7 @@ ${meeting.description ? `Description: ${meeting.description}` : ""}
 Provide a 1-2 sentence summary that captures the likely purpose and outcome of this meeting.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: "llama-3.1-8b-instant",
       messages: [
         {
           role: "system",
